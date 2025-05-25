@@ -27,39 +27,38 @@ int main (void) {
   MX_USART2_UART_Init();
   MX_FATFS_Init();
   
-   // FATFS variables
-    
-    uart_log("Hello\n");
-    HAL_Delay(500);
-    // Mount SD Card
-    res = f_mount(&fs, "", 1);
-    if (res == FR_OK) {
-        uart_log("SD card mounted successfully.\r\n");
+  // FATFS variables  
+  uart_log("Hello\n");
+  HAL_Delay(500);
+  // Mount SD Card
+  res = f_mount(&fs, "", 1);
+  if (res == FR_OK) {
+      uart_log("SD card mounted successfully.\r\n");
 
-        // Open or create log.txt for writing
-        res = f_open(&file, "log.txt", FA_WRITE | FA_OPEN_ALWAYS);
-        if (res == FR_OK) {
-            // Move file pointer to the end for appending
-            f_lseek(&file, f_size(&file));
+      // Open or create log.txt for writing
+      res = f_open(&file, "log.txt", FA_WRITE | FA_OPEN_ALWAYS);
+      if (res == FR_OK) {
+          // Move file pointer to the end for appending
+          f_lseek(&file, f_size(&file));
 
-            char log_entry[] = "Write to sd card\n";
+          char log_entry[] = "Write to sd card\n";
 
-            res = f_write(&file, log_entry, strlen(log_entry), &bw);
-            if (res == FR_OK && bw == strlen(log_entry)) {
-                uart_log("Data written to log.txt\r\n");
-            } else {
-                uart_log("Failed to write data\r\n");
-            }
+          res = f_write(&file, log_entry, strlen(log_entry), &bw);
+          if (res == FR_OK && bw == strlen(log_entry)) {
+              uart_log("Data written to log.txt\r\n");
+          } else {
+              uart_log("Failed to write data\r\n");
+          }
 
-            f_close(&file);
-        } else {
-            uart_log("Failed to open log.txt\r\n");
-        }
+          f_close(&file);
+      } else {
+          uart_log("Failed to open log.txt\r\n");
+      }
 
-        f_mount(NULL, "", 1); // Unmount SD
-    } else {
-        uart_log("Failed to mount SD card\r\n");
-    }
+      f_mount(NULL, "", 1); // Unmount SD
+  } else {
+      uart_log("Failed to mount SD card\r\n");
+  }
 
   
   while (1) {
