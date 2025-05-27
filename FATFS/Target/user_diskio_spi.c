@@ -27,12 +27,12 @@
 #include "stm32f4xx_hal.h" /* Provide the low-level HAL functions */
 #include "user_diskio_spi.h"
 #include "stm32f4xx_ll_gpio.h"
-
+#include "spi_rtos_driver.h"
 //Make sure you set #define SD_SPI_HANDLE as some hspix in main.h
 //Make sure you set #define SD_CS_GPIO_Port as some GPIO port in main.h
 //Make sure you set #define SD_CS_Pin as some GPIO pin in main.h
 
-//extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi1;
 //#define SD_SPI_HANDLE hspi1
 /* Function prototypes */
 
@@ -108,7 +108,8 @@ BYTE xchg_spi (
 )
 {
 	BYTE rxDat;
-  HAL_SPI_TransmitReceive(&SD_SPI_HANDLE, &dat, &rxDat, 1, 50);
+  SRD_SPI_TransmitReceivePolling(&dat, &rxDat, 1, 50);
+//  HAL_SPI_TransmitReceive(&hspi1, &dat, &rxDat, 1, 50);
   return rxDat;
 }
 
@@ -120,9 +121,10 @@ void rcvr_spi_multi (
 	UINT btr		/* Number of bytes to receive (even number) */
 )
 {
-	for(UINT i=0; i<btr; i++) {
-		*(buff+i) = xchg_spi(0xFF);
-	}
+  SRD_SPI_ReceiveDMA(buff, btr, 5000);
+//	for(UINT i=0; i<btr; i++) {
+//		*(buff+i) = xchg_spi(0xFF);
+//	}
 }
 
 
@@ -134,7 +136,8 @@ void xmit_spi_multi (
 	UINT btx			/* Number of bytes to send (even number) */
 )
 {
-	HAL_SPI_Transmit(&SD_SPI_HANDLE, buff, btx, HAL_MAX_DELAY);
+//	HAL_SPI_Transmit(&hspi1, buff, btx, HAL_MAX_DELAY);
+  SRD_SPI_TransmitDMA(buff, btx, 1000);
 }
 #endif
 
