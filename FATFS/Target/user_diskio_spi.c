@@ -40,8 +40,12 @@
 /* Function prototypes */
 
 //(Note that the _256 is used as a mask to clear the prescalar bits as it provides binary 111 in the correct position)
-#define FCLK_SLOW() { MODIFY_REG(SPI1->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_128); }	/* Set SCLK = slow, approx 280 KBits/s*/
-#define FCLK_FAST() { MODIFY_REG(SPI1->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_8); }	/* Set SCLK = fast, approx 4.5 MBits/s */
+
+//#define FCLK_SLOW() { MODIFY_REG(SPI1->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_128); }	/* Set SCLK = slow, approx 280 KBits/s*/
+//#define FCLK_FAST() { MODIFY_REG(SPI1->CR1, SPI_BAUDRATEPRESCALER_256, SPI_BAUDRATEPRESCALER_8); }	/* Set SCLK = fast, approx 4.5 MBits/s */
+
+#define FCLK_SLOW()   SRD_ClockChangeToSlow()
+#define FCLK_FAST()   SRD_ClockChangeToFast()
 
 #define CS_HIGH()	{LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_0);}
 #define CS_LOW()	{LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_0);}
