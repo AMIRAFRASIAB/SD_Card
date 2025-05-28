@@ -12,8 +12,6 @@
 
 
 
-#define DMA2_STREAM5_FOR_SPI_SD_TX_IRQ_PRIORITY   6
-#define DMA2_STREAM0_FOR_SPI_SD_RX_IRQ_PRIORITY   6  
 //-----------------------------------------------------------------------
 // Private Objects 
 //-----------------------------------------------------------------------

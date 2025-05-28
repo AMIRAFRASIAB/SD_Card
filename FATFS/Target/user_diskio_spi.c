@@ -46,9 +46,9 @@
 
 #define FCLK_SLOW()   SRD_ClockChangeToSlow()
 #define FCLK_FAST()   SRD_ClockChangeToFast()
-
-#define CS_HIGH()	{LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_0);}
-#define CS_LOW()	{LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_0);}
+                      
+#define CS_HIGH()	    {LL_GPIO_SetOutputPin(SRD_SPI_CS_GPIO, SRD_SPI_CS_PIN);  }
+#define CS_LOW()	    {LL_GPIO_ResetOutputPin(SRD_SPI_CS_GPIO, SRD_SPI_CS_PIN);}
 
 /*--------------------------------------------------------------------------
 
@@ -168,6 +168,7 @@ int wait_ready (	/* 1:Ready, 0:Timeout */
 	waitSpiTimerTickDelay = (uint32_t)wt;
 	do {
 		d = xchg_spi(0xFF);
+    taskYIELD();
 		/* This loop takes a time. Insert rot_rdq() here for multitask envilonment. */
 	} while (d != 0xFF && ((xTaskGetTickCount() - waitSpiTimerTickStart) < waitSpiTimerTickDelay));	/* Wait for card goes ready or timeout */
 
@@ -223,6 +224,7 @@ int rcvr_datablock (	/* 1:OK, 0:Error */
 	SPI_Timer_On(200);
 	do {							/* Wait for DataStart token in timeout of 200ms */
 		token = xchg_spi(0xFF);
+    taskYIELD();
 		/* This loop will take a time. Insert rot_rdq() here for multitask envilonment. */
 	} while ((token == 0xFF) && SPI_Timer_Status());
 	if(token != 0xFE) return 0;		/* Function fails if invalid DataStart token or timeout */
