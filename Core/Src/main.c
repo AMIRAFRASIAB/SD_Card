@@ -9,6 +9,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 void PrintCardSize(void) {
     FATFS *fs;
     DWORD free_clusters, total_clusters;
@@ -35,9 +38,9 @@ void PrintCardSize(void) {
 
 
 FATFS fs;
-    FIL file;
-    FRESULT res;
-    UINT bw;
+FIL file;
+FRESULT res;
+UINT bw;
 
 char txBuf[120];
 
@@ -46,6 +49,64 @@ void uart_log(const char *msg) {
 }
 
 void SystemClock_Config(void);
+
+void serviceDummy (void* const pvParameters) {
+  while (1) {
+    vTaskDelay(50);
+    
+  }
+}
+
+
+void service_SD (void* const pvParameters) {
+  uart_log("Hello\n");
+  // Mount SD Card
+  res = f_mount(&fs, "", 1);
+//  PrintCardSize();
+  if (res == FR_OK) {
+    uart_log("SD card mounted successfully.\r\n");
+    // Open or create log.txt for writing
+    res = f_open(&file, "log3.txt", FA_WRITE | FA_OPEN_ALWAYS);
+    if (res == FR_OK) {
+      // Move file pointer to the end for appending
+      f_lseek(&file, f_size(&file));
+      char log_entry[] = "Write to sd card\n";
+      res = f_write(&file, log_entry, strlen(log_entry), &bw);
+      if (res == FR_OK && bw == strlen(log_entry)) {
+        uart_log("Data written to log.txt\r\n");
+      } 
+      else {
+        uart_log("Failed to write data\r\n");
+      }
+//        f_close(&file);
+    } 
+    else {
+      uart_log("Failed to open log.txt\r\n");
+    }
+//      f_mount(NULL, "", 1); // Unmount SD
+  } 
+  else {
+    uart_log("Failed to mount SD card\r\n");
+  }
+  uint32_t cnt = 0;
+  while (1) {
+    snprintf(txBuf, sizeof(txBuf), "this is a test message for sd card %d\n", cnt++);
+    vTaskDelay(10);
+    res = f_write(&file, txBuf, strlen(txBuf), &bw);
+    if (res == FR_OK && bw == strlen(txBuf)) {
+      f_sync(&file);
+      uart_log("Data written to log.txt\r\n");
+    }
+    else {
+      uart_log("Failed to write data\r\n");
+    }
+    if (cnt == 1000) {
+      f_mount(NULL, "", 1);
+      uart_log("Eject SD Card\r\n");
+      vTaskSuspend(NULL);
+    }
+  }
+}
 
 int main (void) {
 
@@ -57,61 +118,21 @@ int main (void) {
   SRD_Driver_Init();
   MX_FATFS_Init();
   
-  // FATFS variables  
-  uart_log("Hello\n");
-  HAL_Delay(500);
-  // Mount SD Card
-  res = f_mount(&fs, "", 1);
-  PrintCardSize();
-  if (res == FR_OK) {
-      uart_log("SD card mounted successfully.\r\n");
-
-      // Open or create log.txt for writing
-      res = f_open(&file, "log2.txt", FA_WRITE | FA_OPEN_ALWAYS);
-      if (res == FR_OK) {
-          // Move file pointer to the end for appending
-          f_lseek(&file, f_size(&file));
-
-          char log_entry[] = "Write to sd card\n";
-
-          res = f_write(&file, log_entry, strlen(log_entry), &bw);
-          if (res == FR_OK && bw == strlen(log_entry)) {
-              uart_log("Data written to log.txt\r\n");
-          } else {
-              uart_log("Failed to write data\r\n");
-          }
-
-//          f_close(&file);
-      } else {
-          uart_log("Failed to open log.txt\r\n");
-      }
-
-//      f_mount(NULL, "", 1); // Unmount SD
-  } else {
-      uart_log("Failed to mount SD card\r\n");
-  }
+  xTaskCreate(&service_SD, "SD", 512, NULL, 1, NULL);
+//  xTaskCreate(&serviceDummy, "D1", 64, NULL, 2, NULL);
+//  xTaskCreate(&serviceDummy, "D2", 64, NULL, 2, NULL);
+  vTaskStartScheduler();                     
+  
+  
 
   uint32_t cnt = 0;
   while (1) {
-    snprintf(txBuf, sizeof(txBuf), "this is a test message for sd card %d\n", cnt++);
-    HAL_Delay(10); // when increase this delay the error disapeard
-//    f_open(&file, "log.txt", FA_WRITE | FA_OPEN_ALWAYS);
-    res = f_write(&file, txBuf, strlen(txBuf), &bw);
-    if (res == FR_OK && bw == strlen(txBuf)) {
-        f_sync(&file);
-        uart_log("Data written to log.txt\r\n");
-    } else {
-        uart_log("Failed to write data\r\n");
-    }
-//    f_close(&file);
-    if (cnt == 1000) {
-      f_mount(NULL, "", 1);
-      uart_log("Eject SD Card\r\n");
+    
       while (1) {
         __NOP();
       }
     }
-  }
+  
   
 }
 

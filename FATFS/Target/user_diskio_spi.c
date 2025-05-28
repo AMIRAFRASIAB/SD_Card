@@ -28,11 +28,14 @@
 #include "user_diskio_spi.h"
 #include "stm32f4xx_ll_gpio.h"
 #include "spi_rtos_driver.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
 //Make sure you set #define SD_SPI_HANDLE as some hspix in main.h
 //Make sure you set #define SD_CS_GPIO_Port as some GPIO port in main.h
 //Make sure you set #define SD_CS_Pin as some GPIO pin in main.h
 
-extern SPI_HandleTypeDef hspi1;
+//extern SPI_HandleTypeDef hspi1;
 //#define SD_SPI_HANDLE hspi1
 /* Function prototypes */
 
@@ -89,12 +92,12 @@ uint32_t spiTimerTickStart;
 uint32_t spiTimerTickDelay;
 
 void SPI_Timer_On(uint32_t waitTicks) {
-    spiTimerTickStart = HAL_GetTick();
+    spiTimerTickStart = xTaskGetTickCount();
     spiTimerTickDelay = waitTicks;
 }
 
 uint8_t SPI_Timer_Status() {
-    return ((HAL_GetTick() - spiTimerTickStart) < spiTimerTickDelay);
+    return ((xTaskGetTickCount() - spiTimerTickStart) < spiTimerTickDelay);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -108,7 +111,7 @@ BYTE xchg_spi (
 )
 {
 	BYTE rxDat;
-  SRD_SPI_TransmitReceivePolling(&dat, &rxDat, 1, 50);
+  SRD_SPI_TransmitReceivePolling(&dat, &rxDat, 1, 100);
 //  HAL_SPI_TransmitReceive(&hspi1, &dat, &rxDat, 1, 50);
   return rxDat;
 }
@@ -137,7 +140,7 @@ void xmit_spi_multi (
 )
 {
 //	HAL_SPI_Transmit(&hspi1, buff, btx, HAL_MAX_DELAY);
-  SRD_SPI_TransmitDMA(buff, btx, 1000);
+  SRD_SPI_TransmitDMA(buff, btx, 5000);
 }
 #endif
 
@@ -157,12 +160,12 @@ int wait_ready (	/* 1:Ready, 0:Timeout */
 	uint32_t waitSpiTimerTickStart;
 	uint32_t waitSpiTimerTickDelay;
 
-	waitSpiTimerTickStart = HAL_GetTick();
+	waitSpiTimerTickStart = xTaskGetTickCount();
 	waitSpiTimerTickDelay = (uint32_t)wt;
 	do {
 		d = xchg_spi(0xFF);
 		/* This loop takes a time. Insert rot_rdq() here for multitask envilonment. */
-	} while (d != 0xFF && ((HAL_GetTick() - waitSpiTimerTickStart) < waitSpiTimerTickDelay));	/* Wait for card goes ready or timeout */
+	} while (d != 0xFF && ((xTaskGetTickCount() - waitSpiTimerTickStart) < waitSpiTimerTickDelay));	/* Wait for card goes ready or timeout */
 
 	return (d == 0xFF) ? 1 : 0;
 }
