@@ -12,6 +12,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "sd_card.h"
+
+#define __DEBUGGER_H_INCLUDED__
+
 void PrintCardSize(void) {
     FATFS *fs;
     DWORD free_clusters, total_clusters;
@@ -51,6 +55,7 @@ void uart_log(const char *msg) {
 void SystemClock_Config(void);
 
 void serviceDummy (void* const pvParameters) {
+  SD_CARD_INIT();
   while (1) {
     vTaskDelay(50);
   }

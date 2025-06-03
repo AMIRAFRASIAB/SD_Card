@@ -1,5 +1,6 @@
 
 #include "spi_rtos_driver.h"
+#include "sd_card_config.h"
 
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_bus.h"
@@ -10,7 +11,15 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-
+#if SD_CARD_LOGGER_ENABLE != NO
+  #include "serial_debugger.h"
+#else
+  #define LOG_TRACE(...)      /* Empty */
+  #define LOG_INFO(...)       /* Empty */
+  #define LOG_WARNING(...)    /* Empty */
+  #define LOG_ERROR(...)      /* Empty */
+  #define LOG_FATAL(...)      /* Empty */
+#endif  
 
 //-----------------------------------------------------------------------
 // Private Objects 
@@ -160,16 +169,17 @@ static bool __SRD_SPI_Init (void) {
  * @retval false Initialization failed due to DMA or SPI setup error.
  */
 bool SRD_Driver_Init (void) {
+  LOG_TRACE("SD SPI Driver :: Initializing...");
   __SRD_GPIO_Init ();
   if (!__SRD_DMA_Init()) {
-//    LOG_ERROR("SD SPI Driver :: DMA initialization failed");
+    LOG_ERROR("SD SPI Driver :: DMA initialization failed");
     return false;
   }
   if (!__SRD_SPI_Init()) {
-//    LOG_ERROR("SD SPI Driver :: SPI initialization failed");
+    LOG_ERROR("SD SPI Driver :: SPI initialization failed");
     return false;
   }
-//  LOG_TRACE("SD SPI Driver :: SPI driver initialized successfully");
+  LOG_TRACE("SD SPI Driver :: SPI driver initialized successfully");
   return true;
 }
 //-----------------------------------------------------------------------

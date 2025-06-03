@@ -10,10 +10,7 @@
 #include "stdbool.h"
 
 
-#define DMA2_STREAM5_FOR_SPI_SD_TX_IRQ_PRIORITY   6
-#define DMA2_STREAM0_FOR_SPI_SD_RX_IRQ_PRIORITY   6  
-#define SRD_SPI_CS_GPIO                           GPIOB
-#define SRD_SPI_CS_PIN                            LL_GPIO_PIN_0
+
     
     
     
