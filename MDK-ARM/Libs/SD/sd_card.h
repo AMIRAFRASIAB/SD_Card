@@ -9,9 +9,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "fn_map.h"
+#include "FreeRTOS.h"
 
-/* Interface Macros */
 
+bool sd_write (const char* pSRC, uint16_t len, TickType_t tickToWait);
+bool sd_init (void);
 
 #ifdef __cplusplus
   }

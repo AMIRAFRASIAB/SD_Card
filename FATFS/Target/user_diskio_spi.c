@@ -28,6 +28,7 @@
 #include "user_diskio_spi.h"
 #include "stm32f4xx_ll_gpio.h"
 #include "spi_rtos_driver.h"
+#include "sd_card_config.h"
 #include "FreeRTOS.h"
 #include "task.h"
 

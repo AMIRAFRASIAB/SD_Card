@@ -16,29 +16,6 @@
 
 #define __DEBUGGER_H_INCLUDED__
 
-void PrintCardSize(void) {
-    FATFS *fs;
-    DWORD free_clusters, total_clusters;
-    uint32_t sector_size = 512; // SD cards use 512-byte sectors
-    char buf[100];
-
-    if (f_getfree("", &free_clusters, &fs) == FR_OK) {
-        total_clusters = fs->n_fatent - 2;  // Total clusters (n_fatent includes 2 reserved)
-        DWORD sectors_per_cluster = fs->csize;
-
-        uint64_t total_bytes = (uint64_t)total_clusters * sectors_per_cluster * sector_size;
-        uint64_t free_bytes  = (uint64_t)free_clusters  * sectors_per_cluster * sector_size;
-
-        snprintf(buf, sizeof(buf),
-                 "SD Card Size: %lu MB, Free: %lu MB\r\n",
-                 (uint32_t)(total_bytes / (1024 * 1024)),
-                 (uint32_t)(free_bytes / (1024 * 1024)));
-
-        HAL_UART_Transmit(&huart2, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
-    } else {
-        HAL_UART_Transmit(&huart2, (uint8_t*)"Failed to get SD info\r\n", 24, HAL_MAX_DELAY);
-    }
-}
 
 
 FATFS fs;
@@ -55,60 +32,27 @@ void uart_log(const char *msg) {
 void SystemClock_Config(void);
 
 void serviceDummy (void* const pvParameters) {
-  SD_CARD_INIT();
+  
   while (1) {
-    vTaskDelay(50);
+    uint32_t cnt = 5000000;
+    while (cnt-- > 0);
+    vTaskDelay(1);
   }
 }
 
-
+char str[100];
 void service_SD (void* const pvParameters) {
-  uart_log("Hello\n");
-  // Mount SD Card
-  res = f_mount(&fs, "", 1);
-//  PrintCardSize();
-  if (res == FR_OK) {
-    uart_log("SD card mounted successfully.\r\n");
-    // Open or create log.txt for writing
-    res = f_open(&file, "log3.txt", FA_WRITE | FA_OPEN_ALWAYS);
-    if (res == FR_OK) {
-      // Move file pointer to the end for appending
-      f_lseek(&file, f_size(&file));
-      char log_entry[] = "Write to sd card\n";
-      res = f_write(&file, log_entry, strlen(log_entry), &bw);
-      if (res == FR_OK && bw == strlen(log_entry)) {
-        uart_log("Data written to log.txt\r\n");
-      } 
-      else {
-        uart_log("Failed to write data\r\n");
-      }
-//        f_close(&file);
-    } 
-    else {
-      uart_log("Failed to open log.txt\r\n");
-    }
-//      f_mount(NULL, "", 1); // Unmount SD
-  } 
-  else {
-    uart_log("Failed to mount SD card\r\n");
-  }
   uint32_t cnt = 0;
+  sd_init();
   while (1) {
-    snprintf(txBuf, sizeof(txBuf), "this is a test message for sd card %d\n", cnt++);
-    vTaskDelay(10);
-    res = f_write(&file, txBuf, strlen(txBuf), &bw);
-    if (res == FR_OK && bw == strlen(txBuf)) {
-      f_sync(&file);
-      uart_log("Data written to log.txt\r\n");
+    snprintf((char*)str, sizeof(str), "This is a test %d\n", cnt++);
+    if (sd_write(str, strlen(str), 100)) {
+      uart_log("Write ok\n");
     }
     else {
-      uart_log("Failed to write data\r\n");
+      uart_log("Write failed\n");
     }
-    if (cnt == 1000) {
-      f_mount(NULL, "", 1);
-      uart_log("Eject SD Card\r\n");
-      vTaskSuspend(NULL);
-    }
+    vTaskDelay(100);
   }
 }
 
@@ -122,9 +66,9 @@ int main (void) {
   SRD_Driver_Init();
   MX_FATFS_Init();
   
-  xTaskCreate(&service_SD, "SD", 512, NULL, 1, NULL);
-  xTaskCreate(&serviceDummy, "D1", 64, NULL, 2, NULL);
-  xTaskCreate(&serviceDummy, "D2", 64, NULL, 2, NULL);
+  xTaskCreate(&service_SD, "SD", 512, NULL, 2, NULL);
+  xTaskCreate(&serviceDummy, "D1", 64, NULL, 0, NULL);
+  xTaskCreate(&serviceDummy, "D2", 64, NULL, 0, NULL);
   vTaskStartScheduler();                     
   
   

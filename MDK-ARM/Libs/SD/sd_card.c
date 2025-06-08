@@ -134,7 +134,7 @@ static void (*__sd_notifyFn[2])(TaskHandle_t) = {
   __sd_notifyTaskFromISR     // [1] ISR mode
 };
 /*------------------------------------------------------------*/
-bool sd_write(const char* pSRC, uint16_t len, TickType_t tickToWait) {
+bool sd_write (const char* pSRC, uint16_t len, TickType_t tickToWait) {
   /* Context: 0 -> Thread | 1 -> ISR */
   if (!__initFlag) return false;
   if (len > SD_CARD_TX_BUFFER_LEN) return false;
