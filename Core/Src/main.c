@@ -45,6 +45,22 @@ void service_SD (void* const pvParameters) {
   uint32_t cnt = 0;
   sd_init();
   while (1) {
+    static uint8_t cnt = 0;
+    cnt++;
+    snprintf((char*)str, sizeof(str), "This is a test %d\n", cnt++);
+    if (sd_write(str, strlen(str), 100)) {
+      uart_log("Write ok\n");
+    }
+    else {
+      uart_log("Write failed\n");
+    }
+    vTaskDelay(100);
+    if (cnt == 10) {
+      break;
+    }
+  }
+  sd_swtichToNewFile("hello.txt");
+  while (1) {
     snprintf((char*)str, sizeof(str), "This is a test %d\n", cnt++);
     if (sd_write(str, strlen(str), 100)) {
       uart_log("Write ok\n");

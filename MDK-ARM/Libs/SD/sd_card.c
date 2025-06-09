@@ -39,6 +39,7 @@ static UINT    bw;
 static uint32_t total_bytes = 0; 
 static uint32_t free_bytes  = 0;  
 static uint8_t  __initFlag = 0;
+static bool synchReady = false;
 /*------------------------------------------------------------*/
 typedef enum {
   SD_TaskCMD_Write      = 1UL << 0,
@@ -91,7 +92,6 @@ void serviceSD (void* const pvParameters) {
     vTaskSuspend(NULL);
   }
   uint32_t notifVal = 0;
-  bool synchReady = false;
   while (1) {
     xTaskNotifyWait(0, ULONG_MAX, &notifVal, portMAX_DELAY);
     /* Synchronization */
@@ -220,6 +220,7 @@ bool sd_init (void) {
 }
 /*------------------------------------------------------------*/
 void sd_synchForce (void) {
+  synchReady = true;
   __sd_notifyFn[__get_IPSR() != 0](hTaskSD, SD_TaskCMD_Synch);
 }
 /*------------------------------------------------------------*/
