@@ -27,6 +27,8 @@
 #define SRD_SPI_CS_GPIO                           GPIOB
 #define SRD_SPI_CS_PIN                            LL_GPIO_PIN_0
 
+/* Synchronization Time */
+#define SD_CARD_SYNCH_TIME_MS                     5000
 
 
 #ifdef __cplusplus
