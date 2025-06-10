@@ -74,24 +74,37 @@ void __sd_synchTimCallback (TimerHandle_t xTimer) {
   xTaskNotify(hTaskSD, SD_TaskCMD_Synch, eSetBits);
 }
 /*------------------------------------------------------------*/
+static bool __sd_remount (uint32_t tryCount, uint32_t delayMs) {
+  FRESULT res;
+  for (uint32_t i = 0; i < tryCount; i++) {
+    f_mount(NULL, "", 0);
+    vTaskDelay(pdMS_TO_TICKS(delayMs));
+    extern Disk_drvTypeDef disk;
+    disk.is_initialized[0] = 0;
+    disk_initialize(0);             // Re-init hardware
+    res = f_mount(&fs, "", 1);
+    if (res == FR_OK) {
+      LOG_WARNING("SD :: Re-mount successful on attempt %d", i + 1);
+      __sd_UpdateSpaceParams();
+      res = f_open(&file, fileName, FA_WRITE | FA_OPEN_ALWAYS);
+      if (res == FR_OK) {
+        f_lseek(&file, f_size(&file));
+        return true;
+      } 
+      else {
+        LOG_ERROR("SD :: Re-mount succeeded but file open failed");
+      }
+    }
+  }
+  return false;
+}
+/*------------------------------------------------------------*/
 /* Function Imp */
 /*------------------------------------------------------------*/
 void serviceSD (void* const pvParameters) {
-  res = f_mount(&fs, "", 1);
-  if (res == FR_OK) {
-    LOG_TRACE("SD :: Card mounted successfully");
-    __sd_UpdateSpaceParams();
-    LOG_TRACE("SD :: Total size: %d MB, Free space: %d MB", total_bytes / (1024 * 1024), free_bytes / (1024 * 1024));
-    res = f_open(&file, fileName, FA_WRITE | FA_OPEN_ALWAYS );
-    if (res == FR_OK) {
-      f_lseek(&file, f_size(&file));
-    }
-  }
-  else {
-    LOG_ERROR("SD :: Failed to mount the card");
-    vTaskSuspend(NULL);
-  }
+  __sd_remount(ULONG_MAX, 1000);
   uint32_t notifVal = 0;
+  bool mountNeed = false;
   while (1) {
     xTaskNotifyWait(0, ULONG_MAX, &notifVal, portMAX_DELAY);
     /* Synchronization */
@@ -110,10 +123,16 @@ void serviceSD (void* const pvParameters) {
             synchReady = true;
           } 
           else {
+            mountNeed = true;
             LOG_ERROR("SD :: Write failed on buffer %d", i);
           }
         }
       }
+    }
+    /* Re-mounting ... */
+    if (mountNeed == true) {
+      mountNeed = false;
+      __sd_remount(ULONG_MAX, 1000);
     }
     /* File Switching */
     if (notifVal & SD_TaskCMD_FileSwitch) {
@@ -125,6 +144,7 @@ void serviceSD (void* const pvParameters) {
         LOG_TRACE("SD :: Switched to file: %s",fileName);
       } 
       else {
+        mountNeed = true;
         LOG_ERROR("SD :: Failed to open new file: %s", fileName);
       }
     }

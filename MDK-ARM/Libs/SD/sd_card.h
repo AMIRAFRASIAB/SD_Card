@@ -15,6 +15,7 @@
 bool sd_init (void);
 bool sd_write (const char* pSRC, uint16_t len, TickType_t tickToWait);
 void sd_swtichToNewFile (const char* pSTR);
+void sd_synchForce (void);
     
 #ifdef __cplusplus
   }

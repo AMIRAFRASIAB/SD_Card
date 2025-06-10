@@ -56,6 +56,7 @@ void service_SD (void* const pvParameters) {
     }
     vTaskDelay(100);
     if (cnt == 10) {
+      sd_
       break;
     }
   }
@@ -63,7 +64,7 @@ void service_SD (void* const pvParameters) {
   while (1) {
     snprintf((char*)str, sizeof(str), "This is a test %d\n", cnt++);
     if (sd_write(str, strlen(str), 100)) {
-      uart_log("Write ok\n");
+      uart_log(str);
     }
     else {
       uart_log("Write failed\n");
