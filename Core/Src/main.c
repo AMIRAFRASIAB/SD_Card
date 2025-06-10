@@ -56,7 +56,6 @@ void service_SD (void* const pvParameters) {
     }
     vTaskDelay(100);
     if (cnt == 10) {
-      sd_
       break;
     }
   }

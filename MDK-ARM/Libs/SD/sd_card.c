@@ -9,6 +9,8 @@
 #include "fatfs.h"
 #include "sd_card_config.h"
 #include "limits.h"
+#include "string.h"
+#include "ctype.h"
 
 
 #if SD_CARD_LOGGER_ENABLE != NO
@@ -97,6 +99,45 @@ static bool __sd_remount (uint32_t tryCount, uint32_t delayMs) {
     }
   }
   return false;
+}
+/*------------------------------------------------------------*/
+static bool __sd_deleteOldestFile (void) {
+  DIR dir;
+  FILINFO fno;
+  FRESULT res;
+  char oldestFile[16] = {0};
+  res = f_opendir(&dir, "/");
+  bool result = false;
+  if (res != FR_OK) {
+    LOG_ERROR("SD :: Failed to open root directory (%d)", res);
+    return false;
+  }
+  while (1) {
+    res = f_readdir(&dir, &fno);
+    if (res != FR_OK || fno.fname[0] == 0) {
+      break;
+    }
+    if (!(fno.fattrib & AM_DIR) && strlen(fno.fname) < (sizeof(oldestFile) - 1) && isdigit(fno.fname[0]) && isdigit(fno.fname[7])) {
+      if (oldestFile[0] == 0 || strcmp(fno.fname, oldestFile) < 0) {
+        strcpy(oldestFile, fno.fname);
+      }
+    }
+  }
+  f_closedir(&dir);
+  if (oldestFile[0]) {
+    res = f_unlink(oldestFile);
+    if (res == FR_OK) {
+      result = true;
+      LOG_WARNING("SD :: Deleted oldest log file: %s", oldestFile);
+    } 
+    else {
+      LOG_ERROR("SD :: Failed to delete %s (%d)", oldestFile, res);
+    }
+  } 
+  else {
+    LOG_INFO("SD :: No log files found to delete");
+  }
+  return result;
 }
 /*------------------------------------------------------------*/
 /* Function Imp */
