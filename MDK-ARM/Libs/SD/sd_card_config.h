@@ -30,6 +30,7 @@
 /* Synchronization Time */
 #define SD_CARD_SYNCH_TIME_MS                     5000
 
+#define SD_CARD_MIN_SPACE_THRESHOLD_IN_MB         200
 
 #ifdef __cplusplus
   }

@@ -38,8 +38,8 @@ static FATFS   fs;
 static FIL     file;
 static FRESULT res;
 static UINT    bw;
-static uint32_t total_bytes = 0; 
-static uint32_t free_bytes  = 0;  
+static uint64_t total_bytes = 0; 
+static uint64_t free_bytes  = 0;  
 static uint8_t  __initFlag = 0;
 static bool synchReady = false;
 /*------------------------------------------------------------*/
@@ -74,31 +74,6 @@ bool __sd_UpdateSpaceParams (void) {
 /*------------------------------------------------------------*/
 void __sd_synchTimCallback (TimerHandle_t xTimer) {
   xTaskNotify(hTaskSD, SD_TaskCMD_Synch, eSetBits);
-}
-/*------------------------------------------------------------*/
-static bool __sd_remount (uint32_t tryCount, uint32_t delayMs) {
-  FRESULT res;
-  for (uint32_t i = 0; i < tryCount; i++) {
-    f_mount(NULL, "", 0);
-    vTaskDelay(pdMS_TO_TICKS(delayMs));
-    extern Disk_drvTypeDef disk;
-    disk.is_initialized[0] = 0;
-    disk_initialize(0);             // Re-init hardware
-    res = f_mount(&fs, "", 1);
-    if (res == FR_OK) {
-      LOG_WARNING("SD :: Re-mount successful on attempt %d", i + 1);
-      __sd_UpdateSpaceParams();
-      res = f_open(&file, fileName, FA_WRITE | FA_OPEN_ALWAYS);
-      if (res == FR_OK) {
-        f_lseek(&file, f_size(&file));
-        return true;
-      } 
-      else {
-        LOG_ERROR("SD :: Re-mount succeeded but file open failed");
-      }
-    }
-  }
-  return false;
 }
 /*------------------------------------------------------------*/
 static bool __sd_deleteOldestFile (void) {
@@ -139,6 +114,38 @@ static bool __sd_deleteOldestFile (void) {
   }
   return result;
 }
+/*------------------------------------------------------------*/
+static bool __sd_remount (uint32_t tryCount, uint32_t delayMs) {
+  FRESULT res;
+  for (uint32_t i = 0; i < tryCount; i++) {
+    f_mount(NULL, "", 0);
+    vTaskDelay(pdMS_TO_TICKS(delayMs));
+    extern Disk_drvTypeDef disk;
+    disk.is_initialized[0] = 0;
+    disk_initialize(0);             // Re-init hardware
+    res = f_mount(&fs, "", 1);
+    if (res == FR_OK) {
+      LOG_WARNING("SD :: Re-mount successful on attempt %d", i + 1);
+      __sd_UpdateSpaceParams();
+      uint32_t freeMB = (free_bytes) / (1024 * 1024);
+      if (freeMB <= SD_CARD_MIN_SPACE_THRESHOLD_IN_MB) {
+        if (!__sd_deleteOldestFile()) {
+          return false;
+        }
+      }
+      res = f_open(&file, fileName, FA_WRITE | FA_OPEN_ALWAYS);
+      if (res == FR_OK) {
+        f_lseek(&file, f_size(&file));
+        return true;
+      } 
+      else {
+        LOG_ERROR("SD :: Re-mount succeeded but file open failed");
+      }
+    }
+  }
+  return false;
+}
+
 /*------------------------------------------------------------*/
 /* Function Imp */
 /*------------------------------------------------------------*/
