@@ -561,3 +561,7 @@ inline DRESULT USER_SPI_ioctl (
 	return res;
 }
 #endif
+//-----------------------------------------------------------------------
+DWORD get_fattime (void) {
+  return 0;
+}

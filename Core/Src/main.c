@@ -79,8 +79,8 @@ int main (void) {
   MX_GPIO_Init();
 //  MX_SPI1_Init();
   MX_USART2_UART_Init();
-  SRD_Driver_Init();
-  MX_FATFS_Init();
+//  SRD_Driver_Init();
+//  MX_FATFS_Init();
   
   xTaskCreate(&service_SD, "SD", 512, NULL, 2, NULL);
   xTaskCreate(&serviceDummy, "D1", 64, NULL, 0, NULL);

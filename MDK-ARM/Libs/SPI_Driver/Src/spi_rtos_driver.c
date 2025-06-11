@@ -1,6 +1,8 @@
 
 #include "spi_rtos_driver.h"
 #include "sd_card_config.h"
+#include "ff_gen_drv.h"
+#include "user_diskio.h"
 
 #include "stm32f4xx_ll_dma.h"
 #include "stm32f4xx_ll_bus.h"
@@ -25,7 +27,7 @@
 // Private Objects 
 //-----------------------------------------------------------------------
 static SemaphoreHandle_t hSemaphore = NULL;
-
+static char USERPath[4];
 //-----------------------------------------------------------------------
 // Private APIs 
 //-----------------------------------------------------------------------
@@ -170,6 +172,7 @@ static bool __SRD_SPI_Init (void) {
  */
 bool SRD_Driver_Init (void) {
   LOG_TRACE("SD SPI Driver :: Initializing...");
+  FATFS_LinkDriver(&USER_Driver, USERPath);
   __SRD_GPIO_Init ();
   if (!__SRD_DMA_Init()) {
     LOG_ERROR("SD SPI Driver :: DMA initialization failed");
@@ -341,3 +344,4 @@ void SRD_ClockChangeToFast (void) {
     __DSB();
   }
 }
+//-----------------------------------------------------------------------
